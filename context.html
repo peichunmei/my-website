@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>Luyện Đọc Tiếng Việt</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f0f8ff;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            color: #2E8B57;
+            font-size: 2em;
+            text-transform: uppercase;
+        }
+
+        .image-container {
+            position: relative;
+            overflow: hidden;
+            width: 100%;
+            height: 400px;
+            margin-bottom: 20px;
+        }
+
+        .slide-wrapper {
+            display: flex;
+            transition: transform 0.5s ease-in-out;
+            height: 100%;
+        }
+
+        .classroom-img {
+            width: 100%;
+            height: 400px;
+            object-fit: cover;
+            flex-shrink: 0;
+            border-radius: 15px;
+            cursor: pointer;
+            transition: transform 0.3s;
+        }
+
+        .classroom-img:hover {
+            transform: scale(1.02);
+        }
+
+        .text-control-container {
+            margin: 30px 0;
+            padding: 0 15px;
+        }
+
+        .viet-text {
+            font-size: 1.5em;
+            color: #333;
+            line-height: 1.6;
+            padding: 15px;
+            background: rgba(255,255,255,0.9);
+            border-radius: 10px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            margin-top: 20px;
+            display: none;
+        }
+
+        .viet-text.visible {
+            display: block;
+        }
+
+        .bubble-container {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .bubble-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.9em;
+            transition: all 0.3s;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .speaker-btn {
+            background: #FFD700;
+            color: #333;
+        }
+
+        .record-btn {
+            background: #FF6B6B;
+            color: white;
+        }
+
+        .play-btn {
+            background: #4ECDC4;
+            color: white;
+        }
+
+        .page-control {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-top: 30px;
+        }
+
+        .page-btn {
+            padding: 8px 20px;
+            border: none;
+            border-radius: 20px;
+            background: #2E8B57;
+            color: white;
+            cursor: pointer;
+            transition: opacity 0.3s;
+        }
+
+        .page-btn:disabled {
+            background: #95a5a6;
+            cursor: not-allowed;
+        }
+
+        #audio-player {
+            width: 100%;
+            margin-top: 15px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>LỚP HỌC CỦA CHÚNG TÔI</h1>
+    </div>
+
+    <div class="main-content">
+        <div class="image-container">
+            <div class="slide-wrapper"></div>
+        </div>
+
+        <div class="text-control-container">
+            <div class="bubble-container">
+                <button class="bubble-btn speaker-btn" onclick="playOriginal()">
+                    🔈
+                </button>
+                <button class="bubble-btn record-btn" onclick="toggleRecording()">
+                    🎤
+                </button>
+                <button class="bubble-btn play-btn" onclick="playRecordedAudio()">
+                    ▶
+                </button>
+            </div>
+            <div id="current-text" class="viet-text"></div>
+            <audio id="audio-player" controls></audio>
+        </div>
+
+        <div class="page-control">
+            <button class="page-btn" onclick="changePage(-1)" disabled id="prev-btn">
+                ◀ Trước
+            </button>
+            <span id="page-indicator">Trang 1/11</span>
+            <button class="page-btn" onclick="changePage(1)" id="next-btn">
+                Sau ▶
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // 页面数据
+        const pages = [
+            { img: '1.png', text: 'Đây là lớp học của chúng tôi.Trong lớp học có rất nhiều đồ' },
+            { img: '2.png', text: 'Kia là đồng hồ, nó giúp chúng tôi biết giờ' },
+            { img: '3.png', text: 'Đây là cái bàn và cái ghế, chúng tôi ngồi học ở đây' },
+            { img: '4.png', text: 'Đây là cái bút và quyển vở, chúng tôi dùng chúng để viết và ghi chép kiến thức' },
+            { img: '5.png', text: 'Đây là cái cửa lớp, nơi chúng tôi ra vào lớp' },
+            { img: '6.png', text: 'Đây là cửa sổ, nơi ánh sáng rọi vào' },
+            { img: '7.png', text: 'Kia là bục giảng, cô giáo thường đứng trên bục giảng giảng bài' },
+            { img: '8.png', text: 'Đây là máy tính của tôi, tôi dùng máy tính mỗi ngày' },
+            { img: '9.png', text: 'Lớp tôi còn có máy chiếu' },
+            { img: '10.png', text: 'giá sách và nhiều thứ khác' },
+            { img: '11.png', text: 'Lớp chúng tôi không to nhưng rất đầy đủ' }
+        ];
+
+        let currentPage = 0;
+        let isTextVisible = false;
+        let mediaRecorder = null;
+        let audioChunks = [];
+        const audioPlayer = document.getElementById('audio-player');
+        const slider = document.querySelector('.slide-wrapper');
+        const textElement = document.getElementById('current-text');
+        const pageIndicator = document.getElementById('page-indicator');
+
+        // 初始化轮播
+        function initSlider() {
+            slider.innerHTML = pages.map(page => 
+                `<img src="${page.img}" class="classroom-img" 
+                     alt="Illustration" 
+                     onclick="toggleTextVisibility()">`
+            ).join('');
+            updateSliderPosition();
+        }
+
+        // 翻页功能
+        function changePage(direction) {
+            currentPage = Math.max(0, Math.min(pages.length - 1, currentPage + direction));
+            updateDisplay();
+        }
+
+        // 更新显示
+        function updateDisplay() {
+            textElement.textContent = pages[currentPage].text;
+            textElement.classList.remove('visible');
+            isTextVisible = false;
+            audioPlayer.src = ''; // 清空上一页的录音
+            updateSliderPosition();
+            updatePageIndicator();
+            updateButtons();
+        }
+
+        // 切换文本可见性
+        function toggleTextVisibility() {
+            isTextVisible = !isTextVisible;
+            textElement.classList.toggle('visible', isTextVisible);
+        }
+
+        // 播放原文
+        function playOriginal() {
+            const synth = window.speechSynthesis;
+            const utterance = new SpeechSynthesisUtterance(pages[currentPage].text);
+            utterance.lang = 'vi-VN';
+            synth.speak(utterance);
+        }
+
+        // 录音功能
+        async function toggleRecording() {
+            try {
+                if (!mediaRecorder) {
+                    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                    mediaRecorder = new MediaRecorder(stream);
+                    
+                    mediaRecorder.ondataavailable = e => {
+                        audioChunks.push(e.data);
+                    };
+                    
+                    mediaRecorder.onstop = () => {
+                        const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
+                        const audioUrl = URL.createObjectURL(audioBlob);
+                        audioPlayer.src = audioUrl;
+                        audioChunks = [];
+                    };
+                    
+                    mediaRecorder.start();
+                    document.querySelector('.record-btn').textContent = '⏹';
+                    audioPlayer.removeAttribute('src'); // 清除之前的录音
+                } else {
+                    mediaRecorder.stop();
+                    mediaRecorder.stream.getTracks().forEach(track => track.stop());
+                    mediaRecorder = null;
+                    document.querySelector('.record-btn').textContent = '🎤';
+                }
+            } catch (error) {
+                console.error('Lỗi microphone:', error);
+                alert('Không thể truy cập microphone! Vui lòng cho phép quyền sử dụng microphone.');
+            }
+        }
+
+        // 播放录音
+        function playRecordedAudio() {
+            if (!audioPlayer.src) {
+                alert('Chưa có bản ghi âm! Vui lòng ghi âm trước.');
+                return;
+            }
+            audioPlayer.play();
+        }
+
+        // 辅助函数
+        function updateSliderPosition() {
+            slider.style.transform = `translateX(-${currentPage * 100}%)`;
+        }
+
+        function updatePageIndicator() {
+            pageIndicator.textContent = `Trang ${currentPage + 1}/${pages.length}`;
+        }
+
+        function updateButtons() {
+            document.getElementById('prev-btn').disabled = currentPage === 0;
+            document.getElementById('next-btn').disabled = currentPage === pages.length - 1;
+        }
+
+        // 初始化
+        initSlider();
+        updateDisplay();
+    </script>
+</body>
+</html>
